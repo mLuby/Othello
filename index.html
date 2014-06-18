@@ -121,8 +121,9 @@ console.log('called twice?');
                             $("#"+i+""+j+"").css({"background": dgreen, "color": dgreen});
                         }
                     }
-                    // Hide buttons duplicated by JS VM.
-	                $("button:not([style])").hide();
+                    // Hide duplicated #gameState, #board duplicated by JS VM.
+	                $("#board").next().hide();
+	                $("#board").next().hide();
                 }
             
                 function initializeGame(){
