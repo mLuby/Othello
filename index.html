@@ -122,8 +122,9 @@ console.log('called twice?');
                         }
                     }
                     // Hide duplicated #gameState, #board duplicated by JS VM.
-	                $("#board").next().hide();
-	                $("#board").next().hide();
+		        	$("button:not([style])").remove();
+	                $("#board").next().remove();
+	                $("#board").next().remove();
                 }
             
                 function initializeGame(){
