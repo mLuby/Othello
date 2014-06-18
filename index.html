@@ -74,10 +74,11 @@
                 var green = "green";
                 var dgreen = "gray";
                 //code to set up the applet, including layout
-                $("#applet").css("background-color", "black");
-                $("#applet").append("<div id='gameState'>");
+                var applet = $("#applet");
+                applet.css("background-color", "black");
+                applet.append("<div id='gameState'>");
                 gameStatePanel();
-                $("#applet").append("<div id='board'>");
+                applet.append("<div id='board'>");
                 initializeGame();
             
                 function gameStatePanel(){
@@ -111,6 +112,7 @@
                 function board(){
                 //creates the main board
                     var centerPanel = $("#board");
+console.log('called twice?');
                     for (var i = 0; i < numRanks; i++) {
                         boardArray[i] = [];
                         for (var j = 0; j < numFiles; j++) {
