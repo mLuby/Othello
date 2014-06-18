@@ -1,23 +1,413 @@
 <html>
-<head>
-<title>Two Othellos</title>
-</head>
-<body>
-<h1>Two versions of Othello:</h1>
-<div style="text-align: left"><b><a href="Othello.java">Two Player Code</a>&nbsp;-&nbsp;<a href="Othello2.java">Player Vs CPU Code</a></b></div>
-
-<h1 style="color:red;"><script type="text/javascript">
-	if (navigator.appVersion.indexOf("Mac")!=-1) document.write("Java applets don't work on Mac browsers. Hopefully they'll fix that soon...");
-</script></h1>
-<h2>Two Player</h2>
-<applet code="Othello.class" width=600 height=600>
-</applet>
-
-<h2>Player vs CPU</h2>
-
-<applet code="Othello2.class" width=600 height=600>
-</applet>
-
-
-</body>
+    <head>
+    	<title>Othello</title>
+    	<style>
+        	#applet{
+                width: 400px;
+                background-color: #EEE;
+                text-align: center;
+            }
+            #gameState{
+                text-align: center;
+            }
+            #board{
+                margin-top: 5%;
+                padding-bottom: 5%;
+            }
+            #LEFT, #CENTER, #RIGHT{
+                display: inline;
+                padding-left: 5px;
+                padding-right: 5px;
+            }
+            #LEFT{
+                float:left;
+                padding-right: 15%;
+            }
+            #RIGHT{
+                float:right;
+                padding-left: 15%;
+            }
+            button{
+                margin: 1px;
+                padding: 5%;
+            }
+        </style>
+	</head>
+	<body>
+    	<h1>Othello</h1>
+    	<h2>CS 201 Final Project 12/M3/2007</h2>
+    	<h3>By Kazuaki Okumura & Michael Luby</h3>
+    	<h2>Ported to JavaScript 7/T17/2014</h2>
+    	<h3>by Michael Luby</h3>
+    	<div id="applet"></div>
+    	<div style="text-align: left"><b><a href="Othello.java">Two Player Code</a>&nbsp;-&nbsp;<a href="Othello2.java">Player Vs CPU Code</a></b></div>
+    	<h1 style="color:red;"><script type="text/javascript">
+    		if (navigator.appVersion.indexOf("Mac")!=-1) document.write("Java applets don't work on Mac browsers. Hopefully they'll fix that soon...");
+    	</script></h1>
+    	<h2>Two Player</h2>
+    	<applet code="Othello.class" width=600 height=600></applet>
+    	<h2>Player vs CPU</h2>
+    	<applet code="Othello2.class" width=600 height=600></applet>
+        <script>
+            // Othello Applet (graphics code adapted from Postfix Calculator Applet
+            // 12/M3/2007
+            // CS 201 Final Project  -  Kazuaki Okumura & Michael Luby
+            $(document).ready(function(){
+                //***numRanks and numFiles control the dimensions of the gameboard
+                //***the four starting pieces are initialized in "initializeGame()"
+                //***the computer player can be set to black(1), white(2) or off (!=1,2)
+                //***by changing the integer value in "if(currentPlayer == 2)" in "placeTile()"
+                // instance variables
+                var player1sum; // label used to show player 1's total tiles
+                var gameState; // label used to show game state
+                var player2sum; // label used to show player 2's total tiles
+                var numRanks = 8; // ranks are horizontal
+                var numFiles = 8; // files are vertical
+                var currentPlayer; //1 = black, 2 = white	
+                var boardArray = [];
+                var tempBoard= [];
+                var flippable; //boolean
+                // local color constants
+                var black = "black";
+                var white = "white";
+                var green = "green";
+                var dgreen = "gray";
+                //code to set up the applet, including layout
+                $("#applet").css("background-color", "black");
+                $("#applet").append("<div id='gameState'>");
+                gameStatePanel();
+                $("#applet").append("<div id='board'>");
+                initializeGame();
+            
+                function gameStatePanel(){
+                //dynamic text fields that display the state of the game (in progress, black won,
+                // white won, draw) and sum of player 1's tiles, sum of player 2's tiles
+                    var resultPanel = $("#gameState");
+                    resultPanel.css("background-color",dgreen);
+                    resultPanel.append("<div id='LEFT'>");
+                    resultPanel.append("<div id='CENTER'>");
+                    resultPanel.append("<div id='RIGHT'>");
+                    //displays the sum of player 1 (black)'s tiles in the upper left
+                    player1sum = $("#LEFT"); 
+                    //player1sum.css("fontTimesRoman", Font.BOLD, 30));
+                    player1sum.css("background", white);
+                    player1sum.css("color", black);
+                    player1sum.text("Black: ");
+                    //displays game state in upper center: in progress, black won, white won, or draw)
+                    gameState = $("#CENTER");
+                    //gameState.setFont(new Font("TimesRoman", Font.BOLD, 30));
+                    gameState.css("background", dgreen);
+                    gameState.css("color", green);
+                    gameState.text("Black's Turn");
+                    //displays the sum of player 2 (white)'s tiles in the upper right
+                    player2sum = $("#RIGHT");
+                    //player2sum.setFont(new Font("TimesRoman", Font.BOLD, 30));
+                    player2sum.css("background", black);
+                    player2sum.css("color", white);
+                    player2sum.text("White: ");
+                }
+            
+                function board(){
+                //creates the main board
+                    var centerPanel = $("#board");
+                    for (var i = 0; i < numRanks; i++) {
+                        boardArray[i] = [];
+                        for (var j = 0; j < numFiles; j++) {
+                            boardArray[i][j] = 0;
+                            centerPanel.append("<button id='" + i +""+ j+"' >")
+                            $("#"+i+""+j+"").css({"background": dgreen, "color": dgreen});
+                        }
+                    }
+                }
+            
+                function initializeGame(){
+                //places the starting four pieces, and sets currentPlayer = 1 (black) 
+                    currentPlayer = 1;
+                    board();
+                    boardArray[3][3] = 1;
+                    boardArray[3][4] = 2;
+                    boardArray[4][3] = 2;
+                    boardArray[4][4] = 1;
+                    sumTiles(1);
+                    sumTiles(2);
+                    rePaint();
+                }
+                //-----------------------------Button Methods---------------------------------
+                $("button").click(function(){
+                //This method handles button clicks
+                    var id = $(this).attr("id");
+                    var c = id.charAt(0);
+                    var k = id.charAt(1);
+                    var rank = Number(c);
+                    var file = Number(k);
+                    if (boardArray[rank][file] == 0) {
+                        placeTile(rank, file);
+                    }  
+                });
+                //-----------------------------Functionality Methods--------------------------
+                function placeTile(rank, file){
+                //places a tile (black or white) depending on the currentPlayer) 
+                //at position (rank, file), and toggles currentPlayer
+                
+                    if (moveExists(rank, file)) {
+                        boardArray[rank][file] = currentPlayer;
+                        flipTilesFrom(rank, file);
+                        rePaint();
+                        sumTiles(currentPlayer);
+                        checkVictory();
+                        togglePlayer();
+                    }
+                    if (currentPlayer == 2) {
+                        try {
+                            sleep(1000, computerPlay); //sleep for 1.000 seconds               
+                        } catch (ie) {}
+                    }
+                }
+                
+                function sleep(millis, callback) {
+                    setTimeout(function(){ callback(); }, millis);
+                }
+                
+                function rePaint(){
+                    for (var i = 0; i < numRanks; i++) {
+                        for (var j = 0; j < numFiles; j++) {
+                            var centerPanel = $("#"+i+""+j+"");
+                            if (boardArray[i][j] == 1) {
+                                centerPanel.css("background-color", black);
+                                centerPanel.css("color", black);
+                            }
+                            if (boardArray[i][j] == 2) {
+                                centerPanel.css("background-color", white);
+                                centerPanel.css("color", white);
+                            }
+                        }
+                    }
+                }
+            
+                function togglePlayer(){
+                    if (currentPlayer == 1) {
+                        currentPlayer = 2;
+                        gameState.text("White's Turn");
+                    } else {
+                        currentPlayer = 1;
+                        gameState.text("Black's Turn");
+                    }
+                }
+            
+                function checkVictory(){
+                //if the game is over, declare a winner (or a draw)
+                    if (sumTiles(1) + sumTiles(2) == numRanks * numFiles) { //Game Over
+                        if (sumTiles(1) == sumTiles(2)) {
+                            gameState.text("Draw...");
+                        } else if (sumTiles(1) > sumTiles(2)) {
+                            gameState.text("Black Wins!");
+                        } else {
+                            gameState.text("White Wins!");
+                        }
+                    }
+                }
+            
+                function sumTiles(currentPlayer){
+                //determine the total number of tiles of currentPlayer's color on the board    
+                    var playerSum = 0;
+                    for (var i = 0; i < numRanks; i++) {
+                        for (var j = 0; j < numFiles; j++) {
+                            if (boardArray[i][j] == currentPlayer) {
+                                playerSum++;
+                            }
+                        }
+                    }
+                    if (currentPlayer == 1) {
+                        player1sum.text("Black: " + playerSum);
+                    } else {
+                        player2sum.text("White: " + playerSum);
+                    }
+                    return playerSum;
+                }
+            
+                function moveExists(rank, file){
+                // checks to see if the currentPlayer has a valid move, IE placing a piece would
+                // result in at least one flip for currentPlayer
+                    var tempBoard = [];
+                    for (var i = 0; i < numRanks; i++) {
+                        tempBoard[i] = [];
+                        for (var j = 0; j < numFiles; j++) {
+                            tempBoard[i][j] = boardArray[i][j];
+                        }
+                    }
+                    flippable = false;
+                    flipTilesFrom(rank, file);
+                    for (var i = 0; i < numRanks; i++) {
+                        for (var j = 0; j < numFiles; j++) {
+                            boardArray[i][j] = tempBoard[i][j];
+                        }
+                    }
+                    if (flippable == true) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            
+                function computerPlay(){
+                //searches (exhaustively) for greatest number of tiles flipped, then makes that move
+                    var originalSum = sumTiles(currentPlayer);
+                    var bestGain = 0; // best currentSum-originalSum
+                    var bestRank = 0; // best move rank
+                    var bestFile = 0; // best move file
+                    for (var i = 0; i < numRanks; i++) {
+                        for (var j = 0; j < numFiles; j++) {
+                            console.log("computer playing "+i+","+j);
+                            //create temp board from original board
+                            var tempBoard = [];
+                            for (var k = 0; k < numRanks; k++) {
+                                tempBoard[k] = [];
+                                for (var l = 0; l < numFiles; l++) {
+                                    tempBoard[k][l] = boardArray[k][l];                        
+                                }
+                            }
+                            console.log("created tempBoard");
+                            //hypothetical: more tiles flipped by playing here?");
+                            flipTilesFrom(i, j);
+                            if (sumTiles(currentPlayer) - originalSum > bestGain) {
+                                bestGain = sumTiles(currentPlayer) - originalSum;
+                                bestRank = i;
+                                bestFile = j;
+                            }
+                            console.log("bestGain so far: "+bestGain+" at "+bestRank+","+bestFile);
+                            //restore original board from temp board
+                            for (var m = 0; m < numRanks; m++) {
+                                for (var n = 0; n < numFiles; n++) {
+                                    boardArray[m][n] = tempBoard[m][n];
+                                }
+                            }
+                            console.log("restored board");
+                        }
+                    }
+                    console.log("best gain is "+bestGain+" at "+bestRank+","+bestFile);
+                    placeTile(bestRank, bestFile);
+                }
+            
+                function flipTilesFrom(rank, file){
+                //toggles a tile's color at position (rank, file)
+                    var newRank;
+                    var newFile;
+                    //Flip Eastward
+                    newRank = rank;
+                    newFile = file + 1;
+                    while (newRank != numRanks && newFile != numFiles && newRank != -1 && newFile != -1 && boardArray[rank][newFile] != currentPlayer && boardArray[rank][newFile] != 0) {
+                        newFile = newFile + 1;
+                        if (boardArray[rank][newFile] == currentPlayer) {
+                            for (var i = newFile - 1; i != file; i--) {
+                                boardArray[rank][i] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Southward
+                    newRank = rank + 1;
+                    newFile = file;
+                    while (newRank != numRanks && newFile != numFiles && newRank != -1 && newFile != -1 && boardArray[newRank][file] != currentPlayer && boardArray[newRank][file] != 0) {
+                        newRank = newRank + 1;
+                        if (boardArray[newRank][file] == currentPlayer) {
+                            for (var i = newRank - 1; i != rank; i--) {
+                                boardArray[i][file] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Westward
+                    newRank = rank;
+                    newFile = file - 1;
+                    while (newRank != numRanks && newFile != numFiles && newRank != -1 && newFile != -1 && boardArray[rank][newFile] != currentPlayer && boardArray[rank][newFile] != 0) {
+                        newFile = newFile - 1;
+                        if (boardArray[rank][newFile] == currentPlayer) {
+                            for (var i = newFile + 1; i != file; i++) {
+                                boardArray[rank][i] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Northward
+                    newRank = rank - 1;
+                    newFile = file;
+                    while (newRank != numRanks && newFile != numFiles && newRank != -1 && newFile != -1 && boardArray[newRank][file] != currentPlayer && boardArray[newRank][file] != 0) {
+                        newRank = newRank - 1;
+                        if (boardArray[newRank][file] == currentPlayer) //<-- Occasionally OutOfBounds
+                        {
+                            for (var i = newRank + 1; i != rank; i++) {
+                                boardArray[i][file] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Southeastward
+                    //South East
+                    newRank = rank + 1;
+                    newFile = file + 1;
+                    while (newRank < numRanks && newFile < numFiles && newRank >= 1 && newFile >= 1 && boardArray[newRank][newFile] != currentPlayer && boardArray[newRank][newFile] != 0) {
+                        newRank = newRank + 1;
+                        newFile = newFile + 1;
+                        gameState.text("e@" + newRank + "," + newFile);
+                        if (boardArray[newRank][newFile] == currentPlayer) //<-- Occasionally OutOfBounds
+                        {
+                            for (var i = newRank - 1; i != rank; i--) {
+                                newFile = newFile - 1;
+                                boardArray[i][newFile] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Northeastward
+                    newRank = rank - 1;
+                    newFile = file + 1;
+                    while (newRank < numRanks && newFile < numFiles && newRank >= 1 && newFile >= 1 && boardArray[newRank][newFile] != currentPlayer && boardArray[newRank][newFile] != 0) {
+                        newRank = newRank - 1;
+                        newFile = newFile + 1;
+                        gameState.text("e@" + newRank + "," + newFile);
+                        if (boardArray[newRank][newFile] == currentPlayer) //<-- Occasionally OutOfBounds
+                        {
+                            for (var i = newRank + 1; i != rank; i++) {
+                                newFile = newFile - 1;
+                                boardArray[i][newFile] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Northwestward
+                    newRank = rank - 1;
+                    newFile = file - 1;
+                    while (newRank < numRanks && newFile < numFiles && newRank >= 1 && newFile >= 1 && boardArray[newRank][newFile] != currentPlayer && boardArray[newRank][newFile] != 0) {
+                        newRank = newRank - 1;
+                        newFile = newFile - 1;
+                        gameState.text("e@" + newRank + "," + newFile);
+                        if (boardArray[newRank][newFile] == currentPlayer) //<-- Occasionally OutOfBounds
+                        {
+            
+                            for (var i = newRank + 1; i != rank; i++) {
+                                newFile = newFile + 1;
+                                boardArray[i][newFile] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                    //Flip Southwestward
+                    newRank = rank + 1;
+                    newFile = file - 1;
+                    while (newRank < numRanks && newFile < numFiles && newRank >= 1 && newFile >= 1 && boardArray[newRank][newFile] != currentPlayer && boardArray[newRank][newFile] != 0) {
+                        newRank = newRank + 1;
+                        newFile = newFile - 1;
+                        gameState.text("e@" + newRank + "," + newFile);
+                        if (boardArray[newRank][newFile] == currentPlayer) {
+                            for (var i = newRank - 1; i != rank; i--) {
+                                newFile = newFile + 1;
+                                boardArray[i][newFile] = currentPlayer;
+                                flippable = true;
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    </body>
 </html>
